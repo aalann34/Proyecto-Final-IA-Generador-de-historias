@@ -75,7 +75,7 @@ Luego abrir en el navegador: `http://localhost:7860`
 ## Requisitos
 
 - Python 3.8+
-- Clave de API de OpenAI (gratis en platform.openai.com)
+- Clave de API de OpenAI
 - Conexión a internet
 
 ---
