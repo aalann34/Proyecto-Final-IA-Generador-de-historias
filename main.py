@@ -1,34 +1,46 @@
 import openai
 import os
+from dotenv import load_dotenv
+
+# Cargar configuracion de variables de entorno
+load_dotenv()
 
 def load_api_key_from_env():
     """
-    Carga la clave de API de OpenAI desde el archivo .env
-    Retorna la clave como string o None si no se encuentra
+    Carga la clave de API de OpenAI desde archivo de configuracion
     """
+    # Cargar desde variables de entorno
+    load_dotenv()
+    
+    api_key = os.getenv('OPENAI_API_KEY')
+    if api_key:
+        print(f"API key cargada desde configuracion: {api_key[:20]}...")
+        return api_key
+    
+    # Lectura directa como respaldo
     try:
         with open('.env', 'r', encoding='utf-8') as f:
             for line in f:
                 line = line.strip()
                 if line.startswith('OPENAI_API_KEY='):
                     api_key = line.split('=', 1)[1].strip()
-                    # Limpiar comillas si existen
                     if api_key.startswith('"') and api_key.endswith('"'):
                         api_key = api_key[1:-1]
                     if api_key.startswith("'") and api_key.endswith("'"):
                         api_key = api_key[1:-1]
+                    print(f"API key cargada desde archivo: {api_key[:20]}...")
                     return api_key
     except FileNotFoundError:
-        print("Error: No se encontro el archivo .env")
+        print("Archivo de configuracion no encontrado")
     except Exception as e:
-        print(f"Error leyendo archivo .env: {e}")
+        print(f"Error leyendo configuracion: {e}")
     
-    return os.getenv('OPENAI_API_KEY')
+    print("No se pudo cargar API key")
+    return None
 
 class StoryGenerator:
     """
-    Clase principal para generar historias usando la API de OpenAI GPT-4o mini
-    Implementa funcionalidad de deep learning para generacion de texto
+    Generador de historias usando GPT-4o mini de OpenAI
     """
     
     def __init__(self):
@@ -51,14 +63,6 @@ class StoryGenerator:
     def generate_story(self, prompt, story_type="Aventura", length="Media", tone="Dramatico"):
         """
         Genera una historia usando el modelo GPT-4o mini
-        
-        Parametros:
-        - prompt: idea base para la historia
-        - story_type: genero de la historia
-        - length: extension deseada
-        - tone: tono narrativo
-        
-        Retorna: string con la historia generada
         """
         if not self.client:
             return "Error: Cliente de OpenAI no configurado"
@@ -66,27 +70,26 @@ class StoryGenerator:
         if not prompt.strip():
             return "Error: Se requiere un prompt valido"
         
-        # Construccion del prompt del sistema para el modelo
+        # Construccion del prompt del sistema
         system_prompt = f"""Eres un escritor profesional especializado en narrativa creativa.
 
-PARAMETROS DE GENERACION:
+PARAMETROS:
 - Genero: {story_type}
 - Extension: {length}
 - Tono: {tone}
 
-ESPECIFICACIONES TECNICAS:
-1. Estructura narrativa completa: inicio, desarrollo, climax y resolucion
-2. Desarrollo de personajes con arcos narrativos coherentes
-3. Inclusion de dialogos cuando sea apropiado para el desarrollo
-4. Mantenimiento consistente del tono especificado
-5. Coherencia interna y logica narrativa
-6. Uso de tecnicas descriptivas para ambientacion
-7. Contenido apropiado para audiencia general
+REQUISITOS:
+1. Estructura completa: inicio, desarrollo, climax, final
+2. Personajes desarrollados con motivaciones claras
+3. Dialogos que avancen la trama
+4. Mantener tono {tone.lower()} consistente
+5. Coherencia narrativa
+6. Descripciones que creen atmosfera
+7. Contenido apropiado
 
-Genere una historia original basada en el concepto proporcionado."""
+Genera una historia original basada en el concepto dado."""
 
         try:
-            # Llamada a la API de OpenAI
             response = self.client.chat.completions.create(
                 model="gpt-4o-mini",
                 messages=[
@@ -106,7 +109,6 @@ Genere una historia original basada en el concepto proporcionado."""
 def main():
     """
     Funcion principal del programa
-    Implementa interfaz de usuario para interaccion con el generador
     """
     print("GENERADOR DE HISTORIAS CON INTELIGENCIA ARTIFICIAL")
     print("Aplicacion de Deep Learning para Generacion de Texto")
@@ -122,13 +124,11 @@ def main():
         print("\nNUEVA SESION DE GENERACION")
         print("-" * 40)
         
-        # Entrada de datos del usuario
         prompt = input("Ingrese concepto base para la historia: ").strip()
         if not prompt:
             print("Error: Se requiere un concepto valido")
             continue
         
-        # Seleccion de genero
         print("\nGeneros disponibles:")
         tipos = ["Aventura", "Romance", "Misterio", "Ciencia Ficcion", "Fantasy", 
                 "Terror", "Comedia", "Drama", "Historica", "Thriller"]
@@ -141,7 +141,6 @@ def main():
         except:
             story_type = "Aventura"
         
-        # Seleccion de extension
         print("\nExtensiones disponibles:")
         longitudes = ["Corta (100-300 palabras)", "Media (300-600 palabras)", "Larga (600-1000 palabras)"]
         for i, long in enumerate(longitudes, 1):
@@ -153,7 +152,6 @@ def main():
         except:
             length = "Media (300-600 palabras)"
         
-        # Seleccion de tono
         print("\nTonos narrativos disponibles:")
         tonos = ["Dramatico", "Comico", "Serio", "Inspirador", "Melancolico", 
                 "Misterioso", "Epico", "Romantico"]
@@ -166,20 +164,17 @@ def main():
         except:
             tone = "Dramatico"
         
-        # Proceso de generacion
         print(f"\nProcesando: Historia {story_type.lower()} con tono {tone.lower()}")
         print("Enviando solicitud al modelo GPT-4o mini...")
         
         story = generator.generate_story(prompt, story_type, length, tone)
         
-        # Presentacion de resultados
         print("\n" + "=" * 80)
         print("RESULTADO DE GENERACION:")
         print("=" * 80)
         print(story)
         print("=" * 80)
         
-        # Opcion de guardado
         guardar = input("\nGuardar resultado en archivo de texto? (s/n): ").lower()
         if guardar == 's':
             filename = f"historia_{story_type.lower().replace(' ', '_')}.txt"
@@ -194,7 +189,6 @@ def main():
             except Exception as e:
                 print(f"Error al guardar archivo: {e}")
         
-        # Continuacion del programa
         continuar = input("\nGenerar otra historia? (s/n): ").lower()
         if continuar != 's':
             break
